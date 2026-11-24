@@ -92,7 +92,7 @@ Examples:
 
 #### `-f FILE`, `--file FILE`
 
-Specify the deck file to load. Default: `data/python_basics.json`
+Specify the path to a JSON flashcard deck. This flag is required.
 
 Example:
 ```bash
@@ -119,12 +119,21 @@ python main.py --stats -f data/python_basics.json
 
 Output includes:
 ```
+========================================
+Quiz Summary
+========================================
+Total Questions: 2
+Correct: 1
+Accuracy %: 50.0
+Missed Terms: Which built-in function returns the length of a list?
+
+----------------------------------------
 Per-Card Statistics
 ----------------------------------------
 Card                           Attempts   Correct   
 ----------------------------------------
-What is a list?                1          1         
-What is a dictionary?          2          1         
+Which keyword defines a function? 1          1         
+Which built-in function returns the length of a list? 1          0
 ```
 
 #### `--no-color`
@@ -236,7 +245,7 @@ python main.py -f /full/path/to/deck.json
 
 **Error:**
 ```
-Error: Invalid JSON in /tmp/invalid.json at line 1, column 3: Expecting property name enclosed in double quotes
+Error: Invalid JSON in data/my_deck.json at line 1, column 3: Expecting property name enclosed in double quotes
 ```
 
 **Fix:** Validate your JSON file. Check for missing commas, quotes, or braces. Use a JSON validator online or in your editor.
@@ -245,7 +254,7 @@ Error: Invalid JSON in /tmp/invalid.json at line 1, column 3: Expecting property
 
 **Error:**
 ```
-Error: card 2 in /tmp/missing_field.json: 'back' must be a non-empty string
+Error: card 2 in data/my_deck.json: 'back' must be a non-empty string
 ```
 
 **Fix:** Ensure every card has both `front` and `back` fields. Check the specific card number mentioned in the error.
@@ -287,7 +296,7 @@ The quizzer uses the Strategy pattern to implement different quiz modes. All mod
 
 #### Factory Pattern
 
-A factory function creates the appropriate mode instance:
+The `QuizModeFactory` class creates the appropriate mode instance:
 
 ```python
 mode = QuizModeFactory.create("adaptive", deck)
@@ -300,23 +309,37 @@ Unknown mode names raise `UnknownModeError`.
 To add a new quiz mode:
 
 1. Create a new class inheriting from `QuizMode` in `quiz_engine.py`.
-2. Implement `next_card()` and `mark_answer()` methods.
-3. Register it in the factory by adding an entry to the registry.
+2. Implement the `next_card()` method.
+3. Override `record_result(card: Flashcard, correct: bool) -> None` only if the mode reacts to answers.
+4. Add one entry to `QuizModeFactory._REGISTRY`.
 
 Example:
 
 ```python
 class ShuffledMode(QuizMode):
-    def next_card(self) -> Optional[Flashcard]:
-        # Your implementation
-        pass
+    def __init__(self, cards: Sequence[Flashcard], rng: random.Random | None = None) -> None:
+        super().__init__(cards, rng=rng)
+        self._shuffled = list(cards)
+        self._index = 0
     
-    def mark_answer(self, card: Flashcard, correct: bool) -> None:
-        # Your implementation
+    def next_card(self) -> Flashcard | None:
+        if self._index >= len(self._shuffled):
+            return None
+        card = self._shuffled[self._index]
+        self._index += 1
+        return card
+    
+    def record_result(self, card: Flashcard, correct: bool) -> None:
+        # Only override if your mode needs to react to answers
         pass
 
-# In factory registration:
-QuizModeFactory.register("shuffled", ShuffledMode)
+# In QuizModeFactory._REGISTRY:
+_REGISTRY = {
+    "sequential": SequentialMode,
+    "random": RandomMode,
+    "adaptive": AdaptiveMode,
+    "shuffled": ShuffledMode,  # Add your new mode here
+}
 ```
 
 ## Development
@@ -334,7 +357,7 @@ python -m pytest tests/ --cov=. --cov-report=term-missing
 Expected results:
 - **isort**: Silently organizes imports
 - **black**: Silently formats code
-- **flake8**: "0 errors, 0 warnings"
+- **flake8**: Prints nothing when clean (no errors or warnings)
 - **mypy**: "Success: no issues found in X source files"
 - **pytest**: All tests pass, coverage above 80%
 
@@ -342,5 +365,6 @@ Coverage report (HTML):
 
 ```bash
 python -m pytest --cov=. --cov-report=html
-open htmlcov/index.html
 ```
+
+Then open `htmlcov/index.html` in your browser to view the coverage report.
