@@ -10,13 +10,12 @@ from quiz_engine import (
     MAX_RETRIES,
     RETRY_GAP,
     AdaptiveMode,
+    QuizModeFactory,
     QuizSession,
     RandomMode,
     SequentialMode,
     SessionStats,
     UnknownModeError,
-    available_modes,
-    create_quiz_mode,
 )
 
 
@@ -46,30 +45,30 @@ class TestQuizModeFactory:
 
     def test_quiz_mode_factory(self, sample_deck: Sequence[Flashcard]) -> None:
         """Create each mode type using the factory."""
-        sequential = create_quiz_mode("sequential", sample_deck)
+        sequential = QuizModeFactory.create("sequential", sample_deck)
         assert isinstance(sequential, SequentialMode)
 
-        random_mode = create_quiz_mode("random", sample_deck)
+        random_mode = QuizModeFactory.create("random", sample_deck)
         assert isinstance(random_mode, RandomMode)
 
-        adaptive = create_quiz_mode("adaptive", sample_deck)
+        adaptive = QuizModeFactory.create("adaptive", sample_deck)
         assert isinstance(adaptive, AdaptiveMode)
 
     def test_factory_case_insensitive(
         self, sample_deck: Sequence[Flashcard]
     ) -> None:
         """Mode name matching is case-insensitive."""
-        mode = create_quiz_mode("ADAPTIVE", sample_deck)
+        mode = QuizModeFactory.create("ADAPTIVE", sample_deck)
         assert isinstance(mode, AdaptiveMode)
 
-        mode = create_quiz_mode("Random", sample_deck)
+        mode = QuizModeFactory.create("Random", sample_deck)
         assert isinstance(mode, RandomMode)
 
     def test_factory_whitespace_trimmed(
         self, sample_deck: Sequence[Flashcard]
     ) -> None:
         """Mode name whitespace is trimmed."""
-        mode = create_quiz_mode("  adaptive  ", sample_deck)
+        mode = QuizModeFactory.create("  adaptive  ", sample_deck)
         assert isinstance(mode, AdaptiveMode)
 
     def test_factory_unknown_mode(
@@ -77,7 +76,7 @@ class TestQuizModeFactory:
     ) -> None:
         """Unknown mode name raises UnknownModeError with valid names."""
         with pytest.raises(UnknownModeError) as exc_info:
-            create_quiz_mode("unknown", sample_deck)
+            QuizModeFactory.create("unknown", sample_deck)
 
         error_msg = str(exc_info.value)
         assert "unknown" in error_msg.lower()
@@ -87,7 +86,7 @@ class TestQuizModeFactory:
 
     def test_available_modes(self) -> None:
         """Available modes returns all registered modes."""
-        modes = available_modes()
+        modes = QuizModeFactory.available_modes()
         assert "sequential" in modes
         assert "random" in modes
         assert "adaptive" in modes

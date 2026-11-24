@@ -60,6 +60,8 @@ If any step fails, fix it and re-run. Never report a task as done with failing c
 ## How to work with me (we have a token budget)
 - Do one phase or task per request. Don't start the next phase unprompted.
 - Ask before guessing when a requirement is ambiguous.
+- If my requirement contradicts correct behaviour or the spec, say so and ask. Don't change working code to fit it.
+- Never delete, skip or weaken a test or a check to make it pass. If you can't fix it, stop and report.
 - Don't echo whole files back. End each task with a short report:
   - files created or changed
   - design decisions and assumptions you made
@@ -69,3 +71,4 @@ If any step fails, fix it and re-run. Never report a task as done with failing c
 - Don't edit `docs/ai_edit_log.md` or `docs/report_template.md` unless I ask; I write those.
 - Don't commit or push unless I ask. When I ask, use one clear commit message per phase.
 - `ai_guidance/` holds the course's review checklist and prompting guide. Read it only when I ask for a review.
+

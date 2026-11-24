@@ -1,0 +1,64 @@
+{
+  "cards": [
+    {
+      "front": "What does DNS stand for?",
+      "back": "Domain Name System"
+    },
+    {
+      "front": "What does DHCP stand for?",
+      "back": "Dynamic Host Configuration Protocol"
+    },
+    {
+      "front": "What does NTP stand for?",
+      "back": "Network Time Protocol"
+    },
+    {
+      "front": "What does LDAP stand for?",
+      "back": "Lightweight Directory Access Protocol"
+    },
+    {
+      "front": "What does SSH stand for?",
+      "back": "Secure Shell"
+    },
+    {
+      "front": "What does TLS stand for?",
+      "back": "Transport Layer Security"
+    },
+    {
+      "front": "What does VPN stand for?",
+      "back": "Virtual Private Network"
+    },
+    {
+      "front": "What does NAS stand for?",
+      "back": "Network Attached Storage"
+    },
+    {
+      "front": "What does SAN stand for?",
+      "back": "Storage Area Network"
+    },
+    {
+      "front": "What does RAID stand for?",
+      "back": "Redundant Array of Independent Disks"
+    },
+    {
+      "front": "What does VM stand for?",
+      "back": "Virtual Machine"
+    },
+    {
+      "front": "What does API stand for?",
+      "back": "Application Programming Interface"
+    },
+    {
+      "front": "What does CI/CD stand for?",
+      "back": "Continuous Integration Continuous Deployment"
+    },
+    {
+      "front": "What does SLA stand for?",
+      "back": "Service Level Agreement"
+    },
+    {
+      "front": "What does RDP stand for?",
+      "back": "Remote Desktop Protocol"
+    }
+  ]
+}

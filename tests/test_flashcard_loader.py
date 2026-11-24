@@ -97,6 +97,16 @@ class TestLoadValidDecks:
         assert all(card.front for card in deck)
         assert all(card.back for card in deck)
 
+    def test_load_server_acronyms_deck(self) -> None:
+        """Load server_acronyms.json with 15 cards and no duplicate fronts."""
+        data_dir = Path(__file__).resolve().parent.parent / "data"
+        deck = load_deck(data_dir / "server_acronyms.json")
+
+        assert len(deck) == 15
+        assert all(isinstance(card, Flashcard) for card in deck)
+        fronts = [card.front for card in deck]
+        assert len(fronts) == len(set(fronts))
+
 
 class TestMissingRequiredFields:
     """Tests for cards with missing or empty required fields."""

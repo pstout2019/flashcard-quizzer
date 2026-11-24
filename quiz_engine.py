@@ -192,51 +192,55 @@ class AdaptiveMode(QuizMode):
                 self._retry_queue.append((card, RETRY_GAP))
 
 
-_MODE_REGISTRY: dict[str, Type[QuizMode]] = {
-    "sequential": SequentialMode,
-    "random": RandomMode,
-    "adaptive": AdaptiveMode,
-}
+class QuizModeFactory:
+    """Factory for creating quiz mode instances."""
 
+    _REGISTRY: dict[str, Type[QuizMode]] = {
+        "sequential": SequentialMode,
+        "random": RandomMode,
+        "adaptive": AdaptiveMode,
+    }
 
-def create_quiz_mode(
-    name: str,
-    cards: Sequence[Flashcard],
-    rng: random.Random | None = None,
-) -> QuizMode:
-    """Create a quiz mode instance by name.
+    @classmethod
+    def create(
+        cls,
+        name: str,
+        cards: Sequence[Flashcard],
+        rng: random.Random | None = None,
+    ) -> QuizMode:
+        """Create a quiz mode instance by name.
 
-    Args:
-        name: The name of the mode ("sequential", "random", or "adaptive").
-            Case-insensitive and whitespace-trimmed.
-        cards: A sequence of Flashcard objects for the quiz.
-        rng: Optional Random instance for RandomMode seeding.
+        Args:
+            name: The name of the mode ("sequential", "random", or
+                "adaptive"). Case-insensitive and whitespace-trimmed.
+            cards: A sequence of Flashcard objects for the quiz.
+            rng: Optional Random instance for RandomMode seeding.
 
-    Returns:
-        An instance of the requested QuizMode.
+        Returns:
+            An instance of the requested QuizMode.
 
-    Raises:
-        UnknownModeError: If the name does not match a registered mode.
-    """
-    normalized_name = name.strip().lower()
+        Raises:
+            UnknownModeError: If the name does not match a registered mode.
+        """
+        normalized_name = name.strip().lower()
 
-    if normalized_name not in _MODE_REGISTRY:
-        valid_names = ", ".join(sorted(_MODE_REGISTRY.keys()))
-        raise UnknownModeError(
-            f"Unknown mode '{name}'. Valid modes: {valid_names}"
-        )
+        if normalized_name not in cls._REGISTRY:
+            valid_names = ", ".join(sorted(cls._REGISTRY.keys()))
+            raise UnknownModeError(
+                f"Unknown mode '{name}'. Valid modes: {valid_names}"
+            )
 
-    mode_class = _MODE_REGISTRY[normalized_name]
-    return mode_class(cards, rng=rng)
+        mode_class = cls._REGISTRY[normalized_name]
+        return mode_class(cards, rng=rng)
 
+    @classmethod
+    def available_modes(cls) -> list[str]:
+        """Get the list of available quiz mode names.
 
-def available_modes() -> list[str]:
-    """Get the list of available quiz mode names.
-
-    Returns:
-        A sorted list of mode names that can be passed to create_quiz_mode.
-    """
-    return sorted(_MODE_REGISTRY.keys())
+        Returns:
+            A sorted list of mode names that can be passed to create().
+        """
+        return sorted(cls._REGISTRY.keys())
 
 
 @dataclass
@@ -246,14 +250,20 @@ class SessionStats:
     Attributes:
         total_questions: Total number of card answers submitted (including
             retries).
-        correct: Number of answers that were correct on the first try.
+        correct: Number of answers that were correct.
         missed_terms: Fronts of cards answered incorrectly at least once,
             in the order they were first missed. Contains each term once.
+        card_attempts: Per-card attempt counts, keyed by card front in
+            first-seen order.
+        card_correct: Per-card correct counts, keyed by card front in
+            first-seen order.
     """
 
     total_questions: int = 0
     correct: int = 0
     missed_terms: list[str] = field(default_factory=list)
+    card_attempts: dict[str, int] = field(default_factory=dict)
+    card_correct: dict[str, int] = field(default_factory=dict)
 
     @property
     def accuracy_percent(self) -> float:
@@ -307,10 +317,17 @@ class QuizSession:
         """
         self._stats.total_questions += 1
 
+        if card.front not in self._stats.card_attempts:
+            self._stats.card_attempts[card.front] = 0
+            self._stats.card_correct[card.front] = 0
+
+        self._stats.card_attempts[card.front] += 1
+
         is_correct = answer.strip().casefold() == card.back.strip().casefold()
 
         if is_correct:
             self._stats.correct += 1
+            self._stats.card_correct[card.front] += 1
         else:
             if card.front not in self._stats.missed_terms:
                 self._stats.missed_terms.append(card.front)

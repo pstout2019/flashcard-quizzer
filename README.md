@@ -1,79 +1,346 @@
-# Flashcard Quizzer: Project Starter
+# Flashcard Quizzer
 
-This is the starter for **The Flashcard Quizzer**, a command-line application that loads flashcards from a JSON file and quizzes you in sequential, random, or adaptive mode. You won't write the application by hand. You'll direct an AI coding agent to build it, review what it produces, and refine it until it meets the specification.
+A command-line tool that loads flashcards from JSON files and quizzes you in sequential, random, or adaptive mode.
 
-The full specification (functional requirements, design patterns, required tests, and Definition of Done) is on the project's **Instructions** page in the classroom. This README explains what the starter gives you and how to get going.
+## Overview
 
-## What's in the starter
+The Flashcard Quizzer helps you memorize concepts by displaying flashcards and tracking your performance. It supports three quiz modes:
 
+- **Sequential Mode**: Cards appear in the order they appear in the deck.
+- **Random Mode**: Cards appear in random order.
+- **Adaptive Mode**: Cards appear strategically. When you miss a card, it re-enters the queue to appear again after RETRY_GAP (2) other cards. Each card is re-asked at most MAX_RETRIES (3) times, ensuring every session finishes.
+
+## Requirements
+
+- Python 3.10 or later
+- No runtime dependencies (uses only the Python standard library)
+- `requirements.txt` contains development and testing tools
+
+## Installation
+
+Install development and testing tools:
+
+```bash
+python -m pip install -r requirements.txt
 ```
-starter/
-├── main.py                 # Empty. Your entry point.
-├── data/                   # Sample flashcard decks
-│   ├── glossary.json       # Array format: [{"front": ..., "back": ...}]
-│   └── python_basics.json  # Object format: {"cards": [...]}
-├── utils/                  # Your helper modules go here
-├── tests/                  # Empty. Your pytest suite goes here
-├── docs/
-│   ├── ai_edit_log.md      # AI interaction log (required, 5+ entries)
-│   ├── report_template.md  # Final report template (required, 1,000-1,500 words)
-│   └── design_patterns.md  # Pattern reference
-├── ai_guidance/            # Prompting and code review guides
-├── .claude/                # Claude Code configuration and slash commands
-└── requirements.txt        # Quality tools: pytest, black, flake8, mypy, ...
+
+Optionally, create a virtual environment on your own machine:
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m pip install -r requirements.txt
 ```
 
-`main.py`, `utils/` and `tests/` are deliberately empty. Building them is the project. Keep the folder structure: your agent uses it to separate concerns.
+## Quick Start
 
-The two sample decks use the two JSON formats your loader must support. You can add your own decks to `data/`.
+Run the quiz with the default sequential mode:
 
-## Getting started
+```bash
+python main.py -f data/python_basics.json
+```
 
-1. **Install the quality tools.**
+Run with random mode:
 
-   In the provided workspace:
-   ```bash
-   cd /voc/work/project/starter
-   python -m pip install -r requirements.txt
-   ```
+```bash
+python main.py -f data/python_basics.json -m random
+```
 
-   On your own computer, create and activate a virtual environment first, then install:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   python -m pip install -r requirements.txt
-   ```
+Run with adaptive mode:
 
-2. **Start your AI agent** from this folder (for example, `claude`) and work through the milestones on the Instructions page.
+```bash
+python main.py -f data/server_acronyms.json -m adaptive
+```
 
-## When you're done
+Show per-card statistics after the quiz:
 
-These commands should work (the flags are part of the specification):
+```bash
+python main.py -f data/python_basics.json --stats
+```
+
+## Usage
+
+### Help
+
+View all available flags:
 
 ```bash
 python main.py --help
-python main.py --mode sequential --file data/glossary.json
-python main.py -m adaptive -f data/python_basics.json
 ```
 
-And these checks should pass:
+Output:
+```
+usage: main.py [-h] -f FILE [-m {adaptive,random,sequential}] [--stats]
+               [--no-color]
+
+A terminal flashcard quiz application
+
+options:
+  -h, --help            show this help message and exit
+  -f FILE, --file FILE  Path to the JSON flashcard deck
+  -m {adaptive,random,sequential}, --mode {adaptive,random,sequential}
+                        Quiz mode (default: sequential)
+  --stats               Show per-card statistics
+  --no-color            Disable colored output
+
+Examples:
+  python main.py -f data/glossary.json
+  python main.py -f data/python_basics.json -m adaptive --stats
+```
+
+### Flags
+
+#### `-f FILE`, `--file FILE`
+
+Specify the deck file to load. Default: `data/python_basics.json`
+
+Example:
+```bash
+python main.py -f data/glossary.json
+```
+
+#### `-m MODE`, `--mode MODE`
+
+Choose the quiz mode: `sequential`, `random`, or `adaptive`. Default: `sequential`
+
+Example:
+```bash
+python main.py -m adaptive -f data/server_acronyms.json
+```
+
+#### `--stats`
+
+Include per-card statistics in the quiz summary showing attempts and correct answers for each card.
+
+Example:
+```bash
+python main.py --stats -f data/python_basics.json
+```
+
+Output includes:
+```
+Per-Card Statistics
+----------------------------------------
+Card                           Attempts   Correct   
+----------------------------------------
+What is a list?                1          1         
+What is a dictionary?          2          1         
+```
+
+#### `--no-color`
+
+Disable ANSI color codes. Useful for terminals that don't support colors.
+
+Example:
+```bash
+python main.py --no-color -f data/python_basics.json
+```
+
+## Deck Format
+
+Flashcard decks are JSON files. Two formats are supported:
+
+### Array Format
+
+A simple list of card objects:
+
+```json
+[
+  {
+    "front": "What is Python?",
+    "back": "A high-level programming language"
+  },
+  {
+    "front": "What does REST stand for?",
+    "back": "Representational State Transfer"
+  }
+]
+```
+
+### Object Format
+
+A single object with a `cards` array:
+
+```json
+{
+  "cards": [
+    {
+      "front": "What is Python?",
+      "back": "A high-level programming language"
+    },
+    {
+      "front": "What does REST stand for?",
+      "back": "Representational State Transfer"
+    }
+  ]
+}
+```
+
+### Validation Rules
+
+- Deck must be a valid JSON array or object with a `cards` key.
+- Deck must not be empty.
+- Each card must be an object with `front` and `back` fields.
+- Both `front` and `back` must be non-empty strings.
+- Whitespace at the beginning and end of `front` and `back` is automatically stripped.
+- File must not exceed 1 MB.
+
+### Included Decks
+
+- `data/glossary.json`: Glossary of technical terms
+- `data/python_basics.json`: Python fundamentals
+- `data/server_acronyms.json`: Common server and infrastructure acronyms
+
+## During a Quiz
+
+### Answering Questions
+
+The quizzer displays a question and waits for your answer. Answers are:
+- **Case-insensitive**: "DNS" and "dns" are both correct.
+- **Whitespace-insensitive**: "  Domain Name System  " and "Domain Name System" are both correct.
+- **Exact**: The answer must match the expected back of the card after case and whitespace normalization.
+
+Blank answers (just pressing Enter) are ignored and re-prompt without counting as an attempt.
+
+### Ending the Quiz
+
+You can quit the quiz at any time:
+
+- Type `exit` and press Enter
+- Press Ctrl+C (KeyboardInterrupt)
+- Press Ctrl+D (EOFError / EOF)
+
+The quiz displays a summary of your progress before exiting.
+
+## Exit Codes
+
+- `0`: Quiz completed successfully, or quit gracefully with Ctrl+C/Ctrl+D/exit
+- `1`: Error loading or validating the deck file
+- `2`: Invalid arguments provided to the command
+
+## Troubleshooting
+
+### File Not Found
+
+**Error:**
+```
+Error: File not found: data/my_deck.json
+```
+
+**Fix:** Check the file path. Use an absolute path or verify the file is in the current directory:
+```bash
+python main.py -f /full/path/to/deck.json
+```
+
+### Invalid JSON
+
+**Error:**
+```
+Error: Invalid JSON in /tmp/invalid.json at line 1, column 3: Expecting property name enclosed in double quotes
+```
+
+**Fix:** Validate your JSON file. Check for missing commas, quotes, or braces. Use a JSON validator online or in your editor.
+
+### Missing Required Field
+
+**Error:**
+```
+Error: card 2 in /tmp/missing_field.json: 'back' must be a non-empty string
+```
+
+**Fix:** Ensure every card has both `front` and `back` fields. Check the specific card number mentioned in the error.
+
+### Unknown Mode
+
+**Error:**
+```
+usage: main.py [-h] -f FILE [-m {adaptive,random,sequential}] [--stats]
+               [--no-color]
+main.py: error: argument -m/--mode: invalid choice: 'unknown' (choose from 'adaptive', 'random', 'sequential')
+```
+
+**Fix:** Use only `sequential`, `random`, or `adaptive`. Check your `-m` or `--mode` flag:
+```bash
+python main.py -m random -f data/glossary.json
+```
+
+## Design
+
+### Module Responsibilities
+
+- **`main.py`**: Entry point. Parses arguments, loads the deck, initializes the UI and engine, runs the quiz, catches errors, and sets exit codes.
+- **`data_loader.py`**: Loads and validates flashcard decks from JSON files. Raises clear errors for missing/malformed/invalid files.
+- **`quiz_engine.py`**: Implements the quiz session logic, card-selection strategies, session statistics, and mode factory.
+- **`ui.py`**: Terminal input/output and color formatting. All user-facing output happens here.
+- **`utils/file_handler.py`**: Low-level file reading with clear error messages for missing/unreadable files.
+
+### Design Patterns
+
+#### Strategy Pattern
+
+The quizzer uses the Strategy pattern to implement different quiz modes. All modes implement the same interface:
+
+- **`QuizMode` (ABC)**: Abstract base class defining the interface for card selection.
+- **`SequentialMode`**: Returns cards in deck order.
+- **`RandomMode`**: Returns cards in random order.
+- **`AdaptiveMode`**: Returns cards strategically, re-queuing missed cards.
+
+#### Factory Pattern
+
+A factory function creates the appropriate mode instance:
+
+```python
+mode = QuizModeFactory.create("adaptive", deck)
+```
+
+Unknown mode names raise `UnknownModeError`.
+
+### Adding a New Mode
+
+To add a new quiz mode:
+
+1. Create a new class inheriting from `QuizMode` in `quiz_engine.py`.
+2. Implement `next_card()` and `mark_answer()` methods.
+3. Register it in the factory by adding an entry to the registry.
+
+Example:
+
+```python
+class ShuffledMode(QuizMode):
+    def next_card(self) -> Optional[Flashcard]:
+        # Your implementation
+        pass
+    
+    def mark_answer(self, card: Flashcard, correct: bool) -> None:
+        # Your implementation
+        pass
+
+# In factory registration:
+QuizModeFactory.register("shuffled", ShuffledMode)
+```
+
+## Development
+
+Run these quality checks before committing:
 
 ```bash
-python -m pytest --cov=. --cov-report=html   # target: >80% coverage
-python -m black --check .
+python -m isort .
+python -m black .
 python -m flake8 .
 python -m mypy .
+python -m pytest tests/ --cov=. --cov-report=term-missing
 ```
 
-## What to submit
+Expected results:
+- **isort**: Silently organizes imports
+- **black**: Silently formats code
+- **flake8**: "0 errors, 0 warnings"
+- **mypy**: "Success: no issues found in X source files"
+- **pytest**: All tests pass, coverage above 80%
 
-Check the Instructions page and the rubric for the full list. In short:
+Coverage report (HTML):
 
-- Your complete source code, the `tests/` suite, and the `data/` decks
-- `docs/ai_edit_log.md` with at least 5 detailed AI interactions
-- The final report, written from `docs/report_template.md` (1,000-1,500 words)
-- This README, rewritten to describe **your** application: features, setup, and usage examples
-
-## License
-
-[License](../../LICENSE.txt)
+```bash
+python -m pytest --cov=. --cov-report=html
+open htmlcov/index.html
+```
