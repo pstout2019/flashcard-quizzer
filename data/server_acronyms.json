@@ -37,7 +37,7 @@
       "back": "Storage Area Network"
     },
     {
-      "front": "What does RAID stand for?",
+      "front": "What does RAID stand for (modern expansion)?",
       "back": "Redundant Array of Independent Disks"
     },
     {
@@ -49,8 +49,8 @@
       "back": "Application Programming Interface"
     },
     {
-      "front": "What does CI/CD stand for?",
-      "back": "Continuous Integration Continuous Deployment"
+      "front": "What does SMTP stand for?",
+      "back": "Simple Mail Transfer Protocol"
     },
     {
       "front": "What does SLA stand for?",
