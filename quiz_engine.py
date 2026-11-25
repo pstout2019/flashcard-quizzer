@@ -154,29 +154,31 @@ class AdaptiveMode(QuizMode):
         super().__init__(cards, rng=rng)
         self._main_queue: list[Flashcard] = list(self._cards)
         self._retry_queue: list[tuple[Flashcard, int]] = []
+        self._retry_counts: dict[Flashcard, int] = {}
 
     def next_card(self) -> Flashcard | None:
         """Get the next card using adaptive retry logic.
 
         Returns cards from the retry queue when they are due (after RETRY_GAP
-        other cards have been asked), or from the main queue otherwise.
+        other cards have been asked), or from the main queue otherwise. If
+        the main queue is empty and retry cards remain, serve them even if
+        their gap counter hasn't reached zero.
 
         Returns:
             The next Flashcard, or None when no cards remain.
         """
-        if not self._main_queue and not self._retry_queue:
-            return None
-
         if self._retry_queue:
             card, gap_remaining = self._retry_queue[0]
             if gap_remaining <= 0:
+                self._retry_queue.pop(0)
+                return card
+            if not self._main_queue:
                 self._retry_queue.pop(0)
                 return card
             self._retry_queue[0] = (card, gap_remaining - 1)
 
         if self._main_queue:
             return self._main_queue.pop(0)
-
         return None
 
     def record_result(self, card: Flashcard, correct: bool) -> None:
@@ -187,8 +189,10 @@ class AdaptiveMode(QuizMode):
             correct: True if the answer was correct, False otherwise.
         """
         if not correct:
-            retry_count = sum(1 for c, _ in self._retry_queue if c == card)
-            if retry_count < MAX_RETRIES:
+            if card not in self._retry_counts:
+                self._retry_counts[card] = 0
+            if self._retry_counts[card] < MAX_RETRIES:
+                self._retry_counts[card] += 1
                 self._retry_queue.append((card, RETRY_GAP))
 
 

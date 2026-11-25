@@ -8,7 +8,7 @@ The Flashcard Quizzer helps you memorize concepts by displaying flashcards and t
 
 - **Sequential Mode**: Cards appear in the order they appear in the deck.
 - **Random Mode**: Cards appear in random order.
-- **Adaptive Mode**: Cards appear strategically. When you miss a card, it re-enters the queue to appear again after RETRY_GAP (2) other cards. Each card is re-asked at most MAX_RETRIES (3) times, ensuring every session finishes.
+- **Adaptive Mode**: Cards appear strategically. When you miss a card, it re-enters the queue to appear again after RETRY_GAP (2) other cards, or sooner if fewer cards remain. Each card is re-asked at most MAX_RETRIES (3) times total, ensuring every session finishes.
 
 ## Requirements
 

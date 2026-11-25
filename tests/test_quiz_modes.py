@@ -373,7 +373,7 @@ class TestAdaptiveMode:
     def test_adaptive_exact_sequence_all_wrong(
         self, sample_deck: Sequence[Flashcard]
     ) -> None:
-        """Every card wrong: each appears at most 1 + MAX_RETRIES times."""
+        """Every card wrong: each appears exactly 1 + MAX_RETRIES times."""
         mode = AdaptiveMode(sample_deck)
         sequence = []
 
@@ -386,7 +386,123 @@ class TestAdaptiveMode:
 
         for front in ["What is Python?", "What is git?", "What is Linux?"]:
             count = sum(1 for c in sequence if c == front)
-            assert count <= 1 + MAX_RETRIES
+            assert count == 1 + MAX_RETRIES
+
+    def _run_adaptive_session(
+        self,
+        mode: AdaptiveMode,
+        answers: dict[str, Sequence[bool]],
+    ) -> list[str]:
+        """Drive an adaptive mode session with given answers.
+
+        Args:
+            mode: The AdaptiveMode instance.
+            answers: Dict mapping card front to sequence of bool answers
+                (False=wrong, True=right).
+
+        Returns:
+            List of card fronts in order asked.
+        """
+        sequence: list[str] = []
+        answer_indices: dict[str, int] = {}
+
+        for _ in range(1000):
+            card = mode.next_card()
+            if card is None:
+                break
+            sequence.append(card.front)
+
+            if card.front not in answer_indices:
+                answer_indices[card.front] = 0
+
+            if card.front in answers:
+                answer_list = list(answers[card.front])
+                idx = answer_indices[card.front]
+                if idx < len(answer_list):
+                    is_correct = answer_list[idx]
+                    answer_indices[card.front] += 1
+                else:
+                    is_correct = True
+            else:
+                is_correct = True
+
+            mode.record_result(card, is_correct)
+
+        return sequence
+
+    def test_adaptive_single_card_missed_is_reasked(self) -> None:
+        """Single card always wrong: appears 1 + MAX_RETRIES times."""
+        deck = [Flashcard(front="A", back="Answer A")]
+        mode = AdaptiveMode(deck)
+
+        sequence = self._run_adaptive_session(mode, {"A": [False] * 10})
+
+        assert sequence == ["A"] * (1 + MAX_RETRIES)
+        assert mode.next_card() is None
+
+    def test_adaptive_last_card_missed_is_reasked(self) -> None:
+        """Last card missed is re-asked even at end of main queue."""
+        deck = [
+            Flashcard(front="A", back="Answer A"),
+            Flashcard(front="B", back="Answer B"),
+        ]
+        mode = AdaptiveMode(deck)
+
+        sequence = self._run_adaptive_session(
+            mode, {"A": [True], "B": [False, True]}
+        )
+
+        assert sequence == ["A", "B", "B"]
+        assert mode.next_card() is None
+
+    def test_adaptive_retry_served_sooner_when_few_remain(self) -> None:
+        """Retry queue served when no main cards left, before gap hit."""
+        deck = [
+            Flashcard(front="A", back="Answer A"),
+            Flashcard(front="B", back="Answer B"),
+        ]
+        mode = AdaptiveMode(deck)
+
+        sequence = self._run_adaptive_session(
+            mode, {"A": [False, True], "B": [True]}
+        )
+
+        assert sequence == ["A", "B", "A"]
+        assert mode.next_card() is None
+
+    def test_adaptive_retry_cap_is_per_card_across_retries(self) -> None:
+        """Each card re-asked max MAX_RETRIES times total."""
+        deck = [
+            Flashcard(front="A", back="Answer A"),
+            Flashcard(front="B", back="Answer B"),
+            Flashcard(front="C", back="Answer C"),
+        ]
+        mode = AdaptiveMode(deck)
+
+        sequence = self._run_adaptive_session(
+            mode, {"A": [False] * 10, "B": [True], "C": [True]}
+        )
+
+        a_count = sum(1 for front in sequence if front == "A")
+        assert a_count == 1 + MAX_RETRIES
+        assert mode.next_card() is None
+
+    def test_adaptive_all_wrong_exact_sequence(self) -> None:
+        """All cards wrong: exact sequence [A,B,C] × (1 + MAX_RETRIES)."""
+        deck = [
+            Flashcard(front="A", back="Answer A"),
+            Flashcard(front="B", back="Answer B"),
+            Flashcard(front="C", back="Answer C"),
+        ]
+        mode = AdaptiveMode(deck)
+
+        sequence = self._run_adaptive_session(
+            mode, {"A": [False] * 10, "B": [False] * 10, "C": [False] * 10}
+        )
+
+        expected = ["A", "B", "C"] * (1 + MAX_RETRIES)
+        assert sequence == expected
+        assert mode.next_card() is None
 
 
 class TestSessionStats:
