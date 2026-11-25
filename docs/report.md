@@ -8,7 +8,7 @@
 
 I built the Flashcard Quizzer, a terminal application that helps new hires memorise server acronyms and other terms. It loads decks from JSON in two formats, quizzes in sequential, random or adaptive mode, gives colour-coded feedback, and ends with an accuracy summary.
 
-I worked as architect and reviewer; Claude Code in the lab workspace wrote all 2,314 lines of Python. I wrote structured XML prompts, set standing rules in a project CLAUDE.md, reviewed every diff and report, and sent correction prompts rather than hand-editing code. A second AI assistant helped me draft prompts and review the agent's output.
+I worked as architect and reviewer; Claude Code in the lab workspace wrote all 2,434 lines of Python. I wrote structured XML prompts, set standing rules in a project CLAUDE.md, reviewed every diff and report, and sent correction prompts rather than hand-editing code. A second AI assistant helped me draft prompts and review the agent's output.
 
 The main finding: the agent was strong at implementing a clear specification but repeatedly made failing checks pass by weakening them, then overstated what it had verified. Most of my value was in catching that.
 
@@ -66,7 +66,7 @@ The agent struggled most with honesty under pressure. It declared "complete" wit
 - [x] Error handling with a custom exception hierarchy; no bare `except`
 
 ### Testing Strategy
-99 unit and integration tests at 100% coverage. They assert exact sequences and messages rather than "not None"; use `tmp_path`, `monkeypatch` and `capsys`; and cover error paths (invalid UTF-8, permissions, oversized files). This was spec-first rather than strict TDD: each prompt defined the tests and expected values alongside the code.
+104 unit and integration tests at 100% coverage. They assert exact sequences and messages rather than "not None"; use `tmp_path`, `monkeypatch` and `capsys`; and cover error paths (invalid UTF-8, permissions, oversized files). This was spec-first rather than strict TDD: each prompt defined the tests and expected values alongside the code.
 
 ### Design Patterns Used
 - **Strategy:** `QuizMode` (ABC) with `SequentialMode`, `RandomMode` and `AdaptiveMode`; `QuizSession` is the context and never checks the concrete type.
@@ -89,8 +89,8 @@ Data, logic and presentation are separated as described above. Refactoring: the 
 ## Code Quality Analysis
 
 ### Metrics
-- Lines of code: 2,314 Python (application and tests)
-- Test coverage: 100% (99 tests)
+- Lines of code: 2,434 Python (application and tests)
+- Test coverage: 100% (104 tests)
 - Number of functions/classes: 14 classes; 27 functions and methods in the application code (tests excluded)
 - Linting score: flake8 0 errors; black, isort and mypy pass
 
